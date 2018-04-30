@@ -11,8 +11,8 @@
 
 #include "CashClient.hpp"
 
-
-
+using namespace cv;
+using namespace cv::xfeatures2d;
 
 CashCrypt* CashClient::crypto;
 pthread_mutex_t* CashClient::lock;
@@ -25,10 +25,14 @@ CashClient::CashClient() {
     trainTime = 0;
     //detector = xfeatures2d::SurfFeatureDetector::create();
     //extractor = xfeatures2d::SurfDescriptorExtractor::create();
-    detector = FeatureDetector::create( /*"Dense"*/ /*"PyramidDense"*/ /*"SIFT"*/ "SURF");
-    extractor = DescriptorExtractor::create( "SURF"/*"SIFT"*/ );
+
+    //detector = FeatureDetector::create( /*"Dense"*/ /*"PyramidDense"*/ /*"SIFT"*/ "SURF");
+    //extractor = DescriptorExtractor::create( "SURF"/*"SIFT"*/ );
+    surf = SURF::create(400);
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create( "FlannBased" /*"BruteForce"*/ );
-    bowExtractor = new BOWImgDescriptorExtractor( extractor, matcher );
+
+    //bowExtractor = new BOWImgDescriptorExtractor( extractor, matcher );
+    bowExtractor = new BOWImgDescriptorExtractor(surf, matcher);
     analyzer = new EnglishAnalyzer;
     crypto = new CashCrypt;
     lock = new pthread_mutex_t;
@@ -38,8 +42,9 @@ CashClient::CashClient() {
 }
 
 CashClient::~CashClient() {
-    detector.release();
-    extractor.release();
+    //detector.release();
+    //extractor.release();
+    surf.release();
     bowExtractor.release();
     delete textDcount;
     delete lock;
@@ -72,12 +77,12 @@ void CashClient::train(const char* dataset, int first, int last) {
                 Mat image = imread(it->second);//fname);
                 vector<KeyPoint> keypoints;
                 Mat descriptors;
-                detector->detect(image, keypoints);
-                extractor->compute(image, keypoints, descriptors);
+                surf->detect(image, keypoints);
+                surf->compute(image, keypoints, descriptors);
                 bowTrainer.add(descriptors);
             }
         }
-        LOGI("build codebook with %d descriptors!\n",bowTrainer.descripotorsCount());
+        LOGI("build codebook with %d descriptors!\n",bowTrainer.descriptorsCount());
         Mat codebook = bowTrainer.cluster();
         bowExtractor->setVocabulary(codebook);
         trainTime += diffSec(start, getTime());         //getTime
@@ -94,7 +99,7 @@ void CashClient::train(const char* dataset, int first, int last) {
     map<vector<unsigned char>,vector<unsigned char> > encTextIndex;
     int sockfd = -1;
     timespec start;
-    
+
     //index imgs
     char* fname = (char*)malloc(120);
     if (fname == NULL) pee("malloc error in CashClient::addDocs fname");
@@ -149,7 +154,7 @@ void CashClient::train(const char* dataset, int first, int last) {
         cryptoTime += diffSec(start, getTime()); //end benchmark
     }
     free(fname);
-    
+
     //mandar para a cloud
     start = getTime();                          //start cloud benchmark
     long buffSize = 4*sizeof(int);
@@ -188,7 +193,7 @@ void CashClient::train(const char* dataset, int first, int last) {
     socketSend(sockfd, buff, buffSize);
     free(buff);
     cloudTime += diffSec(start, getTime());                 //end benchmark
-    
+
     //    socketReceiveAck(sockfd);
     close(sockfd);
 }*/
@@ -198,7 +203,7 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
     map<int,string> tags;
     map<int,string> imgs;
     extractFileNames(imgDataset, textDataset, first, last, imgs, tags);
-    
+
     map<vector<unsigned char>,vector<unsigned char> > encImgIndex;
     map<vector<unsigned char>,vector<unsigned char> > encTextIndex;
     map<int,string>::iterator imgs_it=imgs.begin();
@@ -209,13 +214,13 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
         Mat image = imread(imgs_it->second);
         vector<KeyPoint> keypoints;
         Mat bowDesc;
-        detector->detect( image, keypoints );
+        surf->detect( image, keypoints );
         featureTime += diffSec(start, getTime());   //end benchmark
         start = getTime();                          //start index benchmark
 //        vector<vector<int> >* clusterIndexes;
         bowExtractor->compute( image, keypoints, bowDesc);//, clusterIndexes );
         indexTime += diffSec(start, getTime());     //end benchmark
-        
+
         //extract text features
         start = getTime();                          //start feature extraction benchmark
         vector<string> keywords = analyzer->extractFile(tags_it->second.c_str());
@@ -277,12 +282,12 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
         for (int i = 0; i < numCPU; i++)
             if (pthread_join (encThreads[i], NULL)) pee("Error:unable to join thread");
         cryptoTime += diffSec(start, getTime()); //end benchmark
-        
+
         ++imgs_it;
         ++tags_it;
     }
 //    free(fname);
-    
+
     //send to cloud
     start = getTime();                          //start cloud benchmark
     long buffSize = 4*sizeof(int);
@@ -367,7 +372,7 @@ vector<QueryResult> CashClient::search(string imgPath, string textPath, bool ran
     Mat image = imread(imgPath);
     vector<KeyPoint> keypoints;
     Mat bowDesc;
-    detector->detect( image, keypoints );
+    surf->detect( image, keypoints );
     featureTime += diffSec(start, getTime());       //end benchmark
     start = getTime();                              //start index time benchmark
     bowExtractor->compute( image, keypoints, bowDesc );
@@ -398,7 +403,7 @@ vector<QueryResult> CashClient::search(string imgPath, string textPath, bool ran
         return queryStd(&vws, &kws);
 }
 
-    
+
 vector<QueryResult> CashClient::queryRO(map<int,int>* vws, map<string,int>* kws) {
     timespec start = getTime();                              //start cloud time benchmark
     long buffSize = 1 + 3*sizeof(int) + vws->size()*(2*CashCrypt::Ksize+sizeof(int)) + kws->size()*(2*CashCrypt::Ksize+sizeof(int));
@@ -508,12 +513,12 @@ vector<QueryResult> CashClient::queryStd(map<int,int>* vws, map<string,int>* kws
 //    const int x = (int)encKeywords.size()*TextCrypt::keysize+2*sizeof(int);
 //    LOGI("Text Search network traffic part 1: %d\n",x);
     cryptoTime += diffSec(start, getTime());        //end benchmark
-    
+
     start = getTime();                              //start cloud time benchmark
     int sockfd = connectAndSend(buff, buffSize);
     free(buff);
     cloudTime += diffSec(start, getTime());            //end benchmark
-    
+
     vector<QueryResult> queryResults = this->receiveResults(sockfd);
     close(sockfd);
     return queryResults;

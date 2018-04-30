@@ -115,8 +115,8 @@ void runCashClientHolidayAdd() {
     LOGI("begin Cash Holiday Add!\n");
     timespec start = getTime();
     CashClient cash;
-    cash.train("inriaHolidays",1,1491);
-    cash.addDocs("inriaHolidays","flickr_tags",1,1491,0);
+    cash.train("inriaHolidays",1,10);
+    cash.addDocs("inriaHolidays","flickr_tags",1,10,0);
     double total_time = diffSec(start, getTime());
     LOGI("%s total_time:%.6f\n",cash.printTime().c_str(),total_time);
 }
@@ -213,7 +213,7 @@ void runPaillierCashClient() {
     total_time = diffSec(start, getTime());
     LOGI("%s total_time:%.6f\n",cash.printTime().c_str(),total_time);
     printQueryResults(queryResults);
- 
+
 }
 
 int main(int argc, const char * argv[]) {
@@ -278,5 +278,5 @@ int main(int argc, const char * argv[]) {
             count++;
     }
     printf("total descriptors:%d count:%d\n",descriptors.rows,count);
-    
+
 }*/

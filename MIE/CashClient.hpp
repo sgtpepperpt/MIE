@@ -14,8 +14,11 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/features2d/features2d.hpp>
-//#include <opencv2/xfeatures2d/nonfree.hpp>
+
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/xfeatures2d.hpp>
+
 #include <set>
 #include "EnglishAnalyzer.h"
 #include "CashCrypt.hpp"
@@ -23,11 +26,12 @@
 
 using namespace std;
 using namespace cv;
+using namespace cv::xfeatures2d;
 
 #define CLUSTERS 10000
 
 class CashClient {
-    
+
 protected:
     struct encThreadData{
         CashClient* obj;
@@ -38,25 +42,26 @@ protected:
         int first;
         int last;
     };
-    
+
     double featureTime, cryptoTime, cloudTime, indexTime, trainTime;
-    Ptr<FeatureDetector> detector;
-    Ptr<DescriptorExtractor> extractor;
+    //Ptr<FeatureDetector> detector;
+    //Ptr<DescriptorExtractor> extractor;
+    Ptr<SURF> surf;
     Ptr<BOWImgDescriptorExtractor> bowExtractor;
     EnglishAnalyzer* analyzer;
     static CashCrypt* crypto;
     static pthread_mutex_t* lock;
-    
+
     int imgDcount[CLUSTERS];
     map<string,int>* textDcount;
-    
+
     static void* encryptAndIndexImgsThread(void* threadData);
     virtual void encryptAndIndex(void* keyword, int keywordSize, int counter, int docId, int tf,
                          map<vector<unsigned char>, vector<unsigned char> >* index);
     vector<QueryResult> queryRO(map<int,int>* vws, map<string,int>* kws);
     vector<QueryResult> queryStd(map<int,int>* vws, map<string,int>* kws);
     virtual vector<QueryResult> receiveResults(int sockfd);
-    
+
 public:
     CashClient();
     ~CashClient();

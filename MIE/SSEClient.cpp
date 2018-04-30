@@ -16,18 +16,21 @@ SSEClient::SSEClient() {
     cloudTime = 0;
     indexTime = 0;
     trainTime = 0;
-    FeatureDetector::create( /*"Dense"*/ /*"PyramidDense"*/ "SURF" );//detector = xfeatures2d::SurfFeatureDetector::create();
-    DescriptorExtractor::create( "SURF" );//extractor = xfeatures2d::SurfDescriptorExtractor::create();
+    //FeatureDetector::create( /*"Dense"*/ /*"PyramidDense"*/ "SURF" );//detector = xfeatures2d::SurfFeatureDetector::create();
+    //DescriptorExtractor::create( "SURF" );//extractor = xfeatures2d::SurfDescriptorExtractor::create();
+    surf = SURF::create(400);
+
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create( "BruteForce" );
-    bowExtractor = new BOWImgDescriptorExtractor( extractor, matcher );
+    bowExtractor = new BOWImgDescriptorExtractor( surf, matcher );
     analyzer = new EnglishAnalyzer;
     textCrypto = new TextCrypt;
     aesCrypto = new SSECrypt;
 }
 
 SSEClient::~SSEClient() {
-    detector.release();
-    extractor.release();
+    //detector.release();
+    //extractor.release();
+    surf.release();
     bowExtractor.release();
 }
 
@@ -58,13 +61,13 @@ void SSEClient::train() {
                 Mat image = imread(fname);
                 vector<KeyPoint> keypoints;
                 Mat descriptors;
-                detector->detect(image, keypoints);
-                extractor->compute(image, keypoints, descriptors);
+                surf->detect(image, keypoints);
+                surf->compute(image, keypoints, descriptors);
                 bowTrainer.add(descriptors);
             }
         }
         free(fname);
-        LOGI("build codebook with %d descriptors!\n",bowTrainer.descripotorsCount());
+        LOGI("build codebook with %d descriptors!\n",bowTrainer.descriptorsCount());
         Mat codebook = bowTrainer.cluster();
         bowExtractor->setVocabulary(codebook);
         trainTime += diffSec(start, getTime());         //getTime
@@ -89,7 +92,7 @@ void SSEClient::addDocs(const char* imgDataset, const char* textDataset, bool fi
         receivePostingLists(sockfd, &imgIndex, &textIndex);
         socketReceiveAck(sockfd);
     }
-    
+
     //index imgs
     char* fname = (char*)malloc(120);
     if (fname == NULL) pee("malloc error in SSEClient::addDocs fname");
@@ -100,7 +103,7 @@ void SSEClient::addDocs(const char* imgDataset, const char* textDataset, bool fi
         Mat image = imread(fname);
         vector<KeyPoint> keypoints;
         Mat bowDesc;
-        detector->detect( image, keypoints );
+        surf->detect( image, keypoints );
         timespec start = getTime();     //start crypto benchmark
         bowExtractor->compute( image, keypoints, bowDesc );
         cryptoTime += diffSec(start, getTime()); //end benchmark
@@ -133,7 +136,7 @@ void SSEClient::addDocs(const char* imgDataset, const char* textDataset, bool fi
         }
     }
     free(fname);
-    
+
     //encrypt img index
     vector< vector<unsigned char> > encImgIndex;
     map<vector<unsigned char>,vector<unsigned char> > encTextIndex;
@@ -175,7 +178,7 @@ void SSEClient::addDocs(const char* imgDataset, const char* textDataset, bool fi
         free(buff);
     }
     cryptoTime += diffSec(start, getTime());            //end benchmark
-    
+
     //mandar para a cloud
     start = getTime();                          //start cloud benchmark
     long buffSize = 3*sizeof(int);
@@ -209,7 +212,7 @@ void SSEClient::addDocs(const char* imgDataset, const char* textDataset, bool fi
     socketSend(sockfd, buff, buffSize);
     free(buff);
     cloudTime += diffSec(start, getTime());                 //end benchmark
-    
+
     socketReceiveAck(sockfd);
 }
 
@@ -279,7 +282,7 @@ set<QueryResult,cmp_QueryResult> SSEClient::search(int id) {
     Mat image = imread(fname);
     vector<KeyPoint> keypoints;
     Mat bowDesc;
-    detector->detect( image, keypoints );
+    surf->detect( image, keypoints );
     timespec start = getTime();              //start crypto time benchmark
     bowExtractor->compute( image, keypoints, bowDesc );
     cryptoTime += diffSec(start, getTime()); //end benchmark
@@ -310,7 +313,7 @@ set<QueryResult,cmp_QueryResult> SSEClient::search(int id) {
         indexTime += diffSec(start, getTime());          //end benchmark
     }
     free(fname);
-    
+
     //mandar para a cloud
     start = getTime();                      //start cloud time benchmark
     long buffSize = 1 + 3*sizeof(int) + vws.size()*sizeof(int) + encKeywords.size()*TextCrypt::keysize;
@@ -334,7 +337,7 @@ set<QueryResult,cmp_QueryResult> SSEClient::search(int id) {
 //    LOGI("Text Search network traffic part 1: %d\n",x);
     free(buff);
     cloudTime += diffSec(start, getTime());            //end benchmark
-    
+
     //receive posting lists and calculate query results
     return calculateQueryResults(sockfd, &vws, &encKeywords);
 }
@@ -348,7 +351,7 @@ set<QueryResult,cmp_QueryResult> SSEClient::calculateQueryResults(int sockfd, ma
     map<vector<unsigned char>, map<int,int> > textPostingLists;
     receivePostingLists(sockfd, &imgPostingLists, &textPostingLists);
     socketReceiveAck(sockfd);
-    
+
     //calculate img query results
     timespec start = getTime();                    //start index time benchmark
     map<int,double>* imgQueryResults = new map<int,double>;
@@ -371,7 +374,7 @@ set<QueryResult,cmp_QueryResult> SSEClient::calculateQueryResults(int sockfd, ma
     }
     set<QueryResult,cmp_QueryResult> sortedImgResults = sort(imgQueryResults);
     free(imgQueryResults);
-    
+
     //calculate text query results
     map<int,double>* textQueryResults = new map<int,double>;
     for (map<vector<unsigned char>,map<int,int> >::iterator it=textPostingLists.begin(); it!=textPostingLists.end(); ++it) {
@@ -387,7 +390,7 @@ set<QueryResult,cmp_QueryResult> SSEClient::calculateQueryResults(int sockfd, ma
     }
     set<QueryResult,cmp_QueryResult> sortedTextResults = sort(textQueryResults);
     free(textQueryResults);
-    
+
     //merge and return
     set<QueryResult,cmp_QueryResult> mergedResults = mergeSearchResults(&sortedImgResults, &sortedTextResults);
     indexTime += diffSec(start, getTime());            //end benchmark
@@ -470,16 +473,17 @@ string SSEClient::printTime() {
 #define READ_QUERIES 0 // set READ to 1 to read from disk. 0 to compute and write
 
 void sse_bovwDOCS() {
-    Ptr<FeatureDetector> detector = FeatureDetector::create( "PyramidDense" ); //xfeatures2d::SurfFeatureDetector::create();
-    Ptr<DescriptorExtractor> extractor = DescriptorExtractor::create( "SURF" ); //xfeatures2d::SurfDescriptorExtractor::create();
+    //Ptr<FeatureDetector> detector = FeatureDetector::create( "PyramidDense" ); //xfeatures2d::SurfFeatureDetector::create();
+    //Ptr<DescriptorExtractor> extractor = DescriptorExtractor::create( "SURF" ); //xfeatures2d::SurfDescriptorExtractor::create();
+    Ptr<SURF> surf = SURF::create(400);
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create( "BruteForce" );
-    Ptr<BOWImgDescriptorExtractor> bowExtractor = new BOWImgDescriptorExtractor( extractor, matcher );
+    Ptr<BOWImgDescriptorExtractor> bowExtractor = new BOWImgDescriptorExtractor( surf, matcher );
     string dataset = "/Users/bernardo/Dropbox/WorkspacePHD/MUSE/datasets/wang/";
     string extension = ".jpg";
     string data = "/Users/bernardo/Data/SSE";
     char numstr[21]; // enough to hold all numbers up to 64-bits
     FileStorage fs;
-    
+
 #if READ_CODEBOOK == 0
     TermCriteria terminate_criterion;
     terminate_criterion.epsilon = FLT_EPSILON;
@@ -496,14 +500,14 @@ void sse_bovwDOCS() {
             Mat image = imread(dataset+numstr+extension);
             vector<KeyPoint> keypoints;
             Mat descriptors;
-            detector->detect(image, keypoints);
-            extractor->compute(image, keypoints, descriptors);
+            surf->detect(image, keypoints);
+            surf->compute(image, keypoints, descriptors);
             bowTrainer.add(descriptors);
         }
     }
-    LOGI("build codebook with %d descriptors!\n",bowTrainer.descripotorsCount());
+    LOGI("build codebook with %d descriptors!\n",bowTrainer.descriptorsCount());
     Mat dictionary = bowTrainer.cluster();
-    
+
     fs.open(data+"dictionary.yml", FileStorage::WRITE);
     fs << "vocabulary" << dictionary;
     fs.release();
@@ -523,7 +527,7 @@ void sse_bovwDOCS() {
         Mat image = imread(dataset+numstr+extension);
         vector<KeyPoint> keypoints;
         Mat bowDesc;
-        detector->detect( image, keypoints );
+        surf->detect( image, keypoints );
         bowExtractor->compute( image, keypoints, bowDesc );
         for (unsigned j=0; j<CLUSTERS; j++)
             bowImageDescriptors.at<float>(i,j) = bowDesc.at<float>(j);
@@ -541,7 +545,7 @@ void sse_bovwDOCS() {
         idfs[i] = log10(1000.f / df);
         //        LOGI("idf %d: %f\n",i,idfs[i]);
     }
-    
+
     fs.open(data+"index.yml", FileStorage::WRITE);
     fs << "tfs" << bowImageDescriptors;
     fs << "idfs" << idfs;

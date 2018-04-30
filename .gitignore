@@ -22,3 +22,7 @@ xcuserdata
 *.xccheckout
 *.moved-aside
 *.xcuserstate
+
+*.o
+MIE/Client
+Server/Server

@@ -19,19 +19,24 @@
 #include <string>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/features2d/features2d.hpp>
-#include <opencv2/nonfree/nonfree.hpp> //#include <opencv2/xfeatures2d/nonfree.hpp>
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/xfeatures2d.hpp>
+
 #include "EnglishAnalyzer.h"
 #include "SBE.h"
 #include "TextCrypt.h"
 #include "Util.h"
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
 using namespace std;
 using namespace cv;
+using namespace cv::xfeatures2d;
+
 
 class MIEClient {
-    
     struct sbeThreadData{
         SBE* sbe;
         Mat* descriptors;
@@ -39,7 +44,7 @@ class MIEClient {
         int first;
         int last;
     };
- 
+
     struct sendThreadData{
         char op;
         int id;
@@ -48,21 +53,22 @@ class MIEClient {
         double* cloudTime;
 //        pthread_mutex_t* lock;
     };
-    
+
     double featureTime, indexTime, cryptoTime, cloudTime;
-    Ptr<FeatureDetector> detector;
-    Ptr<DescriptorExtractor> extractor;
+    //Ptr<FeatureDetector> detector;
+    //Ptr<DescriptorExtractor> extractor;
+    Ptr<SURF> surf;
     EnglishAnalyzer* analyzer;
     SBE* sbe;
     TextCrypt* textCrypto;
 //    pthread_mutex_t lock;
-    
+
     void processDoc(int id, string imgPath, string textPath, vector< vector<float> >* features, vector< vector<unsigned char> >* encKeywords);
     int sendDoc(char op, int id, vector< vector<float> >* features, vector< vector<unsigned char> >* encKeywords);
     static void* sbeEncryptionThread(void* threadData);
     static void* sendThread(void* threadData);
-        
-    
+
+
 public:
     MIEClient();
     ~MIEClient();
@@ -70,7 +76,7 @@ public:
     void index();
     vector<QueryResult> search(int id, string imgPath, string textPath);
     string printTime();
-    
+
 };
 
 

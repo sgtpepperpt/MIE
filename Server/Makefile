@@ -5,55 +5,55 @@ $(eval $(RUN_ARGS):;@:)
 endif
 
 Server : Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o
-	g++ -o Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o -L/usr/local/lib -L/usr/local/opencv/opencv3.1/lib -lopencv_core -lopencv_features2d -lcrypto -lz -lgmp -ldl -pthread
+	g++ -Wno-unused-command-line-argument -o Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o `pkg-config --cflags --libs opencv` -lcrypto -lz -lgmp -ldl -pthread
 
 debug : Main.debug MIEServer.debug MIEServerMT.debug SSEServer.debug ServerUtil.debug CashServer.debug PaillierCashServer.debug paillier.debug
-	g++ -o Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o -L/usr/local/opencv/opencv3.1/lib -lopencv_core -lopencv_features2d -lcrypto -lz -lgmp -ldl -pthread
+	g++ -Wno-unused-command-line-argument -o Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o `pkg-config --cflags --libs opencv` -lcrypto -lz -lgmp -ldl -pthread
 
 Main.o : Main.cpp
-	g++ -std=c++11 -I/usr/local/opencv/opencv3.1/include -I/usr/local/include -pthread -c Main.cpp
+	g++ -Wno-unused-command-line-argument -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c Main.cpp
 
 MIEServer.o : MIEServer.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -I/usr/local/include -pthread -c MIEServer.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c MIEServer.cpp
 
 MIEServerMT.o : MIEServerMT.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -I/usr/local/include -pthread -c MIEServerMT.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c MIEServerMT.cpp
 
 SSEServer.o : SSEServer.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -I/usr/local/include -pthread -c SSEServer.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c SSEServer.cpp
 
 ServerUtil.o : ServerUtil.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -I/usr/local/include -pthread -c ServerUtil.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c ServerUtil.cpp
 
 CashServer.o : CashServer.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -I/usr/local/include -pthread -c CashServer.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c CashServer.cpp
 
 PaillierCashServer.o : PaillierCashServer.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -I/usr/local/include -pthread -c PaillierCashServer.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c PaillierCashServer.cpp
 
 paillier.o : paillier.c
 	gcc -I/usr/local/include -pthread -c paillier.c
 
 Main.debug : Main.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -pthread -g -O0 -c Main.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c Main.cpp
 
 MIEServer.debug : MIEServer.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -pthread -g -O0 -c MIEServer.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c MIEServer.cpp
 
 MIEServerMT.debug : MIEServerMT.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -pthread -g -O0 -c MIEServerMT.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c MIEServerMT.cpp
 
 SSEServer.debug : SSEServer.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -pthread -g -O0 -c SSEServer.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c SSEServer.cpp
 
 ServerUtil.debug : ServerUtil.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -pthread -g -O0 -c ServerUtil.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c ServerUtil.cpp
 
 CashServer.debug : CashServer.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -pthread -g -O0 -c CashServer.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c CashServer.cpp
 
 PaillierCashServer.debug : PaillierCashServer.cpp
-	g++ -std=c++11 -I /usr/local/opencv/opencv3.1/include -pthread -g -O0 -c PaillierCashServer.cpp
+	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c PaillierCashServer.cpp
 
 paillier.debug : paillier.c
 	gcc -pthread -g -O0 -c paillier.c
