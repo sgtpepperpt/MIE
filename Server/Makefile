@@ -4,62 +4,40 @@ RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(RUN_ARGS):;@:)
 endif
 
-Server : Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o
-	g++ -Wno-unused-command-line-argument -o Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o `pkg-config --cflags --libs opencv` -lcrypto -lz -lgmp -ldl -pthread
+DEBUG_FLAGS := -g -O0
 
-debug : Main.debug MIEServer.debug MIEServerMT.debug SSEServer.debug ServerUtil.debug CashServer.debug PaillierCashServer.debug paillier.debug
-	g++ -Wno-unused-command-line-argument -o Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o `pkg-config --cflags --libs opencv` -lcrypto -lz -lgmp -ldl -pthread
+C_FLAGS := -I/usr/local/include `pkg-config --cflags --libs opencv` -Wno-unused-command-line-argument -pthread $(DEBUG_FLAGS)
+CPP_FLAGS := $(C_FLAGS) -std=c++11
+
+Server : Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o
+	g++ -o Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o $(CPP_FLAGS) -lcrypto -lz -lgmp -ldl
 
 Main.o : Main.cpp
-	g++ -Wno-unused-command-line-argument -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c Main.cpp
+	g++ $(CPP_FLAGS) -c Main.cpp
 
 MIEServer.o : MIEServer.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c MIEServer.cpp
+	g++ $(CPP_FLAGS) -c MIEServer.cpp
 
 MIEServerMT.o : MIEServerMT.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c MIEServerMT.cpp
+	g++ $(CPP_FLAGS) -c MIEServerMT.cpp
 
 SSEServer.o : SSEServer.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c SSEServer.cpp
+	g++ $(CPP_FLAGS) -c SSEServer.cpp
 
 ServerUtil.o : ServerUtil.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c ServerUtil.cpp
+	g++ $(CPP_FLAGS) -c ServerUtil.cpp
 
 CashServer.o : CashServer.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c CashServer.cpp
+	g++ $(CPP_FLAGS) -c CashServer.cpp
 
 PaillierCashServer.o : PaillierCashServer.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -c PaillierCashServer.cpp
+	g++ $(CPP_FLAGS) -c PaillierCashServer.cpp
 
 paillier.o : paillier.c
-	gcc -I/usr/local/include -pthread -c paillier.c
-
-Main.debug : Main.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c Main.cpp
-
-MIEServer.debug : MIEServer.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c MIEServer.cpp
-
-MIEServerMT.debug : MIEServerMT.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c MIEServerMT.cpp
-
-SSEServer.debug : SSEServer.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c SSEServer.cpp
-
-ServerUtil.debug : ServerUtil.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c ServerUtil.cpp
-
-CashServer.debug : CashServer.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c CashServer.cpp
-
-PaillierCashServer.debug : PaillierCashServer.cpp
-	g++ -std=c++11 `pkg-config --cflags --libs opencv` -pthread -g -O0 -c PaillierCashServer.cpp
-
-paillier.debug : paillier.c
-	gcc -pthread -g -O0 -c paillier.c
+	gcc $(C_FLAGS) -c paillier.c
 
 clean :
-	rm Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o core
+	rm -f Server Main.o MIEServer.o MIEServerMT.o SSEServer.o ServerUtil.o CashServer.o PaillierCashServer.o paillier.o
 
 run : Server
 	LD_LIBRARY_PATH=/usr/local/opencv/opencv3.1/lib/ DYLD_LIBRARY_PATH=/usr/local/opencv/opencv3.1/lib/ ./Server $(RUN_ARGS) >teste.txt 2>&1 &
