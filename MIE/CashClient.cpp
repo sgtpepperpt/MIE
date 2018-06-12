@@ -73,14 +73,15 @@ void CashClient::train(const char* dataset, int first, int last) {
         BOWKMeansTrainer bowTrainer ( CLUSTERS, terminate_criterion, 3, KMEANS_PP_CENTERS );
         RNG& rng = theRNG();
         for (map<int,string>::iterator it = imgs.begin(); it != imgs.end(); ++it) {
-            if (rng.uniform(0.f,1.f) <= 0.75f) {
+            //if (rng.uniform(0.f,1.f) <= 0.75f) {
+                printf("train %s\n", it->second.c_str());
                 Mat image = imread(it->second);//fname);
                 vector<KeyPoint> keypoints;
                 Mat descriptors;
                 surf->detect(image, keypoints);
                 surf->compute(image, keypoints, descriptors);
                 bowTrainer.add(descriptors);
-            }
+            //}
         }
         LOGI("build codebook with %d descriptors!\n",bowTrainer.descriptorsCount());
         Mat codebook = bowTrainer.cluster();
@@ -210,6 +211,8 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
     map<int,string>::iterator imgs_it=imgs.begin();
     map<int,string>::iterator tags_it=tags.begin();
     while (imgs_it != imgs.end() && tags_it != tags.end()) {
+        printf("add %s\n", imgs_it->second.c_str());
+
         //extract img features
         start = getTime();                          //start feature extraction benchmark
         Mat image = imread(imgs_it->second);
@@ -367,6 +370,7 @@ void CashClient::encryptAndIndex(void* keyword, int keywordSize, int counter, in
 
 
 vector<QueryResult> CashClient::search(string imgPath, string textPath, bool randomOracle) {
+    printf("search %s\n", imgPath.c_str());
     //process img object
     timespec start = getTime();                     //start feature extraction benchmark
     map<int,int> vws;
@@ -450,6 +454,10 @@ vector<QueryResult> CashClient::queryRO(map<int,int>* vws, map<string,int>* kws)
     LOGI("Query sent, awaiting results...\n");
     free(buff);
     vector<QueryResult> queryResults = this->receiveResults(sockfd);
+
+    for(QueryResult r : queryResults) {
+        printf("%d %f\n", r.docId, r.score);
+    }
 //    cloudTime += diffSec(start, getTime());            //end benchmark
     close(sockfd);
     return queryResults;

@@ -532,7 +532,7 @@ void extractFlickrImgsFileNames (int nImgs, std::map<int,std::string>& imgs) {
 
 void extractFlickrTagsFileNames (int nImgs, std::map<int,std::string>& docs) {
     std::string holidayDir = homePath;
-    holidayDir += "Datasets/flickr_tags/";
+    holidayDir += "../../Datasets/mirflickr/meta/tags/";
     DIR* dir;
     struct dirent* ent;
     int i = 0;

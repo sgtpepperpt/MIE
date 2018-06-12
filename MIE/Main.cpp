@@ -115,7 +115,7 @@ void runCashClientHolidayAdd() {
     LOGI("begin Cash Holiday Add!\n");
     timespec start = getTime();
     CashClient cash;
-    cash.train("inriaHolidays",1,10);
+    cash.train("inriaHolidays",1,1491);
     cash.addDocs("inriaHolidays","flickr_tags",1,10,0);
     double total_time = diffSec(start, getTime());
     LOGI("%s total_time:%.6f\n",cash.printTime().c_str(),total_time);
@@ -175,8 +175,8 @@ void runCashClientHolidayQueries() {
     for (int i = 100000; i <= 149900; i+=100) {
         bzero(imgPath, 120);
         bzero(textPath, 120);
-        sprintf(imgPath, "%sDatasets/inriaHolidays/%d.jpg", homePath, i);
-        sprintf(textPath, "%sDatasets/flickr_tags/tags%d.txt", homePath, i/100000);
+        sprintf(imgPath, "%s../../Datasets/inria/%d.jpg", homePath, i);
+        sprintf(textPath, "%s../../Datasets/mirflickr/meta/tags/tags%d.txt", homePath, i/100000);
         queries[i] = cash.search(imgPath,textPath, true);
     }
     delete[] imgPath;
@@ -218,7 +218,11 @@ void runPaillierCashClient() {
 
 int main(int argc, const char * argv[]) {
     setvbuf(stdout, NULL, _IONBF, 0);
-    if (argc != 2) {
+
+    runCashClientHolidayAdd();
+    runCashClientHolidayQueries();
+
+    /*if (argc != 2) {
         printf("Incorrect number of arguments. Please give a test name, e.g. \"mieHolidayAdd\", \"mieFlickrAdd\", \"mieIndex\", \"mieHolidayQueries\", \"mieHolidaySingleSearch\", \"sse\", \"cashHolidayAdd\", \"cashFlickrAdd\", \"cashHolidayQueries\", \"cashHolidaySingleSearch\" or \"PaillierCash\"\n");
         return 0;
     } else if (strcasecmp(argv[1], "mieHolidayAdd") == 0)
@@ -250,7 +254,7 @@ int main(int argc, const char * argv[]) {
     else {
         printf("Server command not recognized! Please give a test name, e.g. \"mieHolidayAdd\", \"mieFlickrAdd\", \"mieIndex\", \"mieHolidayQueries\", \"mieHolidaySingleSearch\", \"sse\", \"cashHolidayAdd\", \"cashFlickrAdd\", \"cashHolidayQueries\", \"cashHolidaySingleSearch\" or \"PaillierCash\"\n");
         return 0;
-    }
+    }*/
 }
 
 
