@@ -20,6 +20,7 @@ CashCrypt::CashCrypt() {
     else {
         spc_rand(K, Ksize);
         f = fopen((keyFilename+"Data/Client/Cash/K").c_str(), "wb");
+        //printf("%s\n",(keyFilename+"Data/Client/Cash/K").c_str());
         fwrite(K, 1, Ksize, f);
     }
     fclose(f);

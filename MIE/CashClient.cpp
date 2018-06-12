@@ -203,6 +203,7 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
     map<int,string> tags;
     map<int,string> imgs;
     extractFileNames(imgDataset, textDataset, first, last, imgs, tags);
+    printf("extracted filenames\n");
 
     map<vector<unsigned char>,vector<unsigned char> > encImgIndex;
     map<vector<unsigned char>,vector<unsigned char> > encTextIndex;

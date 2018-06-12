@@ -484,7 +484,7 @@ void extractFileNames (const char* imgDataset, const char* textDataset, int firs
 
 void extractHolidayFileNames (int nImgs, std::map<int,std::string>& imgs) {
     std::string holidayDir = homePath;
-    holidayDir += "Datasets/inriaHolidays/";
+    holidayDir += "../../Datasets/inria/";
     DIR* dir;
     struct dirent* ent;
     int i = 0;
