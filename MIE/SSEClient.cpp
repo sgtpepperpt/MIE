@@ -31,7 +31,7 @@ SSEClient::~SSEClient() {
     //detector.release();
     //extractor.release();
     surf.release();
-    bowExtractor.release();
+    //bowExtractor.release();
 }
 
 void SSEClient::train() {
@@ -477,7 +477,7 @@ void sse_bovwDOCS() {
     //Ptr<DescriptorExtractor> extractor = DescriptorExtractor::create( "SURF" ); //xfeatures2d::SurfDescriptorExtractor::create();
     Ptr<SURF> surf = SURF::create(400);
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create( "BruteForce" );
-    Ptr<BOWImgDescriptorExtractor> bowExtractor = new BOWImgDescriptorExtractor( surf, matcher );
+    BOWImgDescriptorExtractor* bowExtractor = new BOWImgDescriptorExtractor( surf, matcher );
     string dataset = "/Users/bernardo/Dropbox/WorkspacePHD/MUSE/datasets/wang/";
     string extension = ".jpg";
     string data = "/Users/bernardo/Data/SSE";

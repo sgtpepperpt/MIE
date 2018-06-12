@@ -14,25 +14,25 @@ uint64_t pack754(long double f, unsigned bits, unsigned expbits)
     int shift;
     long long sign, exp, significand;
     unsigned significandbits = bits - expbits - 1; // -1 for sign bit
-    
+
     if (f == 0.0) return 0; // get this special case out of the way
-    
+
     // check sign and begin normalization
     if (f < 0) { sign = 1; fnorm = -f; }
     else { sign = 0; fnorm = f; }
-    
+
     // get the normalized form of f and track the exponent
     shift = 0;
     while(fnorm >= 2.0) { fnorm /= 2.0; shift++; }
     while(fnorm < 1.0) { fnorm *= 2.0; shift--; }
     fnorm = fnorm - 1.0;
-    
+
     // calculate the binary form (non-float) of the significand data
     significand = fnorm * ((1LL<<significandbits) + 0.5f);
-    
+
     // get the biased exponent
     exp = shift + ((1<<(expbits-1)) - 1); // shift + bias
-    
+
     // return the final answer
     return (sign<<(bits-1)) | (exp<<(bits-expbits-1)) | significand;
 }
@@ -43,23 +43,23 @@ long double unpack754(uint64_t i, unsigned bits, unsigned expbits)
     long long shift;
     unsigned bias;
     unsigned significandbits = bits - expbits - 1; // -1 for sign bit
-    
+
     if (i == 0) return 0.0;
-    
+
     // pull the significand
     result = (i&((1LL<<significandbits)-1)); // mask
     result /= (1LL<<significandbits); // convert back to float
     result += 1.0f; // add the one back on
-    
+
     // deal with the exponent
     bias = (1<<(expbits-1)) - 1;
     shift = ((i>>significandbits)&((1LL<<expbits)-1)) - bias;
     while(shift > 0) { result *= 2.0; shift--; }
     while(shift < 0) { result /= 2.0; shift++; }
-    
+
     // sign it
     result *= (i>>(bits-1))&1? -1.0: 1.0;
-    
+
     return result;
 }
 
@@ -164,14 +164,14 @@ int sendall(int s, char *buf, long len)
     long total = 0;        // how many bytes we've sent
     long bytesleft = len; // how many we have left to send
     long n = 0;
-    
+
     while(total < len) {
         n = send(s, buf+total, bytesleft, 0);
         if (n == -1) { break; }
         total += n;
         bytesleft -= n;
     }
-    
+
     return n==-1||total!=len ? -1 : 0; // return -1 on failure, 0 on success
 }
 
@@ -349,7 +349,7 @@ std::vector<QueryResult> receiveQueryResults(int sockfd) {
     int resultsSize = readIntFromArr(buff, &pos);
     std::vector<QueryResult> queryResults;
     queryResults.resize(resultsSize);
-    
+
     int resultsBuffSize = resultsSize * (sizeof(int) + sizeof(uint64_t));
     char* buff2 = (char*) malloc(resultsBuffSize);
     if (buff2 == NULL) pee("malloc error in MIEClient::receiveQueryResults");
@@ -398,10 +398,10 @@ void zipAndSend(int sockfd, char* buff, long size) {
         }
     uint64_t serializedZipSize = htobe64(zipSize);
     memcpy(zip, &serializedZipSize, sizeof(uint64_t));
-    
+
     uint64_t serializedDataSize = htobe64(size);
     memcpy(zip + sizeof(uint64_t), &serializedDataSize, sizeof(uint64_t));
-    
+
     socketSend (sockfd, zip, zipSize + 2*sizeof(uint64_t)) ;
     free(zip);
 //    LOGI("Search network traffic part 1: %ld\n",zipSize + 2*sizeof(uint64_t));
@@ -410,18 +410,18 @@ void zipAndSend(int sockfd, char* buff, long size) {
 long receiveAndUnzip(int sockfd, char* data) {
     char buff[2*sizeof(uint64_t)];
     socketReceive(sockfd, buff, 2*sizeof(uint64_t));
-    
+
     unsigned long zipSize;
     memcpy(&zipSize, buff, sizeof(uint64_t));
     zipSize = be64toh(zipSize);
-    
+
     unsigned long dataSize;
     memcpy(&dataSize, buff + sizeof(uint64_t), sizeof(uint64_t));
     dataSize = be64toh(dataSize);
 
     char* zip = (char*)malloc(zipSize);
     socketReceive(sockfd, zip, zipSize);
-    
+
     data = (char*)malloc(dataSize);
     int result = uncompress((unsigned char*)data, &dataSize, (unsigned char*)zip, zipSize);
     free(zip);
@@ -469,8 +469,8 @@ std::vector<std::string>& split(const std::string& s, char delim, std::vector<st
         fstream.close();
     } else
         pee("Util::holidayQueries Unable to open file");
-    
-    
+
+
     return result;
 }*/
 

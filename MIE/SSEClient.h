@@ -31,7 +31,7 @@ class SSEClient {
     //Ptr<FeatureDetector> detector;
     //Ptr<DescriptorExtractor> extractor;
     Ptr<SURF> surf;
-    Ptr<BOWImgDescriptorExtractor> bowExtractor;
+    BOWImgDescriptorExtractor* bowExtractor;
     EnglishAnalyzer* analyzer;
     TextCrypt* textCrypto;
     SSECrypt* aesCrypto;

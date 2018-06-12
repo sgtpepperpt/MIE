@@ -47,7 +47,7 @@ protected:
     //Ptr<FeatureDetector> detector;
     //Ptr<DescriptorExtractor> extractor;
     Ptr<SURF> surf;
-    Ptr<BOWImgDescriptorExtractor> bowExtractor;
+    BOWImgDescriptorExtractor* bowExtractor;
     EnglishAnalyzer* analyzer;
     static CashCrypt* crypto;
     static pthread_mutex_t* lock;

@@ -45,7 +45,7 @@ CashClient::~CashClient() {
     //detector.release();
     //extractor.release();
     surf.release();
-    bowExtractor.release();
+    //bowExtractor.release();
     delete textDcount;
     delete lock;
 }

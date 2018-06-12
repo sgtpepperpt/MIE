@@ -60,17 +60,17 @@ vector<unsigned char> CashCrypt::encData (unsigned char* key, unsigned char* dat
     int ciphertext_len;
     unsigned char iv[16] = {0};
     unsigned char* ciphertext = (unsigned char*)malloc(size+16);
-    
+
     if(!(ctx = EVP_CIPHER_CTX_new()))
         pee("CashCrypt::encrypt - could not create ctx\n");
-    
+
     if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv)) //key will have 20 bytes but aes128 will only use the first 16
         pee("CashCrypt::encrypt - could not init encrypt\n");
-    
+
     if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, data, size))
         pee("CashCrypt::encrypt - could not encrypt update\n");
     ciphertext_len = len;
-    
+
     if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
         pee("CashCrypt::encrypt - could not encrypt final\n");
     ciphertext_len += len;
@@ -90,28 +90,28 @@ vector<unsigned char> CashCrypt::encData (unsigned char* key, unsigned char* dat
     int len;
     int plaintext_len;
     unsigned char iv[16] = {0};
-    
+
     if (!(ctx = EVP_CIPHER_CTX_new()))
         pee("ServerUtil::decrypt - could not create ctx\n");
-    
+
     if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, key, iv)) //key will have 20 bytes but aes128 will only use the first 16
         pee("ServerUtil::decrypt - could not init decrypt\n");
-    
+
     if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertextSize))
         pee("ServerUtil::decrypt - could not decrypt update\n");
     plaintext_len = len;
-    
+
     if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len))
         pee("ServerUtil::decrypt - could not decrypt final\n");
     plaintext_len += len;
     EVP_CIPHER_CTX_free(ctx);
- 
+
 //     vector<unsigned char> v;
 //     v.resize(plaintext_len);
 //     for (int i = 0; i < plaintext_len; i++)
 //     v[i] = plaintext[i];
 //     free(plaintext);
 //     return v;
- 
+
     return plaintext_len;
 }*/
