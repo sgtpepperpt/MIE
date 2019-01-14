@@ -15,7 +15,9 @@
 
 int main(int argc, const char * argv[]) {
     setvbuf(stdout, NULL, _IONBF, 0);
-    Server* server;
+    Server* server = new CashServer();
+
+    /*
     if (argc != 2) {
         printf("Incorrect number of arguments. Please give a server name, e.g. \"mie\", \"mieMT\", \"sse\", \"Cash\" and \"PaillierCash\"\n");
         return 0;
@@ -32,7 +34,8 @@ int main(int argc, const char * argv[]) {
     else {
         printf("Server command not recognized! Available Servers: \"mie\", \"mieMT\", \"sse\", \"Cash\" and \"PaillierCash\"\n");
         return 0;
-    }
+    }*/
+
     server->startServer();
 }
 

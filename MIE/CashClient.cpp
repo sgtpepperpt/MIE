@@ -28,7 +28,7 @@ CashClient::CashClient() {
 
     //detector = FeatureDetector::create( /*"Dense"*/ /*"PyramidDense"*/ /*"SIFT"*/ "SURF");
     //extractor = DescriptorExtractor::create( "SURF"/*"SIFT"*/ );
-    surf = SURF::create(400);
+    surf = SIFT::create(500);
     Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create( "FlannBased" /*"BruteForce"*/ );
 
     //bowExtractor = new BOWImgDescriptorExtractor( extractor, matcher );
@@ -73,7 +73,7 @@ void CashClient::train(const char* dataset, int first, int last) {
         BOWKMeansTrainer bowTrainer ( CLUSTERS, terminate_criterion, 3, KMEANS_PP_CENTERS );
         RNG& rng = theRNG();
         for (map<int,string>::iterator it = imgs.begin(); it != imgs.end(); ++it) {
-            //if (rng.uniform(0.f,1.f) <= 0.75f) {
+            if (rng.uniform(0.f,1.f) <= 0.75f) {
                 printf("train %s\n", it->second.c_str());
                 Mat image = imread(it->second);//fname);
                 vector<KeyPoint> keypoints;
@@ -81,7 +81,7 @@ void CashClient::train(const char* dataset, int first, int last) {
                 surf->detect(image, keypoints);
                 surf->compute(image, keypoints, descriptors);
                 bowTrainer.add(descriptors);
-            //}
+            }
         }
         LOGI("build codebook with %d descriptors!\n",bowTrainer.descriptorsCount());
         Mat codebook = bowTrainer.cluster();
@@ -95,111 +95,7 @@ void CashClient::train(const char* dataset, int first, int last) {
     }
 }
 
-/*void CashClient::addDocsMT(const char* imgDataset, const char* textDataset, int first, int last, int prefix) {
-    map<vector<unsigned char>,vector<unsigned char> > encImgIndex;
-    map<vector<unsigned char>,vector<unsigned char> > encTextIndex;
-    int sockfd = -1;
-    timespec start;
-
-    //index imgs
-    char* fname = (char*)malloc(120);
-    if (fname == NULL) pee("malloc error in CashClient::addDocs fname");
-    for (unsigned i=first; i<=last; i++) {
-        vector<int> imgCounters;
-        vector<string> textCounters;
-        start = getTime();                          //start feature extraction benchmark
-        bzero(fname, 120);
-        sprintf(fname, "%s/%s/im%d.jpg", datasetsPath, imgDataset, i);
-        Mat image = imread(fname);
-        vector<KeyPoint> keypoints;
-        Mat bowDesc;
-        detector->detect( image, keypoints );
-        featureTime += diffSec(start, getTime());   //end benchmark
-        start = getTime();                          //start index benchmark
-        bowExtractor->compute( image, keypoints, bowDesc );
-        indexTime += diffSec(start, getTime());     //end benchmark
-        start = getTime();                          //start crypto benchmark
-        for (int j=0; j<CLUSTERS; j++) {
-            int val = denormalize(bowDesc.at<float>(j),(int)keypoints.size());
-            if (val > 0)
-                imgCounters.push_back(j);
-        }
-        cryptoTime += diffSec(start, getTime());    //end benchmark
-
-        //index text
-        start = getTime();                          //start feature extraction benchmark
-        bzero(fname, 120);
-        sprintf(fname, "%s/%s/tags%d.txt", datasetsPath, textDataset, i);
-        vector<string> keywords = analyzer->extractFile(fname);
-        featureTime += diffSec(start, getTime());   //end benchmark
-        start = getTime();                          //start index benchmark
-        map<string,int> textTfs;
-        for (int j = 0; j < keywords.size(); j++) {
-            string keyword = keywords[j];
-            map<string,int>::iterator it = textTfs.find(keyword);
-            if (it == textTfs.end())
-                textTfs[keyword] = 1;
-            else
-                it->second++;
-        }
-        indexTime += diffSec(start, getTime());     //end benchmark
-        start = getTime();                          //start crypto benchmark
-        for (map<string,int>::iterator it=textTfs.begin(); it!=textTfs.end(); ++it) {
-            int c = 0;
-            map<string,int>::iterator counterIt = textDcount->find(it->first);
-            if (counterIt != textDcount->end())
-                c = counterIt->second;
-            encryptAndIndex((void*)it->first.c_str(), (int)it->first.size(), c, i+prefix, it->second, &encTextIndex);
-            (*textDcount)[it->first] = ++c;
-        }
-        cryptoTime += diffSec(start, getTime()); //end benchmark
-    }
-    free(fname);
-
-    //mandar para a cloud
-    start = getTime();                          //start cloud benchmark
-    long buffSize = 4*sizeof(int);
-    for (map<vector<unsigned char>,vector<unsigned char> >::iterator it=encImgIndex.begin(); it!=encImgIndex.end(); ++it)
-        buffSize += CashCrypt::Ksize*sizeof(unsigned char) + sizeof(int) + it->second.size()*sizeof(unsigned char);
-    for (map<vector<unsigned char>,vector<unsigned char> >::iterator it=encTextIndex.begin(); it!=encTextIndex.end(); ++it)
-        buffSize += CashCrypt::Ksize*sizeof(unsigned char) + sizeof(int) + it->second.size()*sizeof(unsigned char);
-    char* buff = (char*)malloc(buffSize);
-    if (buff == NULL) pee("malloc error in CashClient::addDocs sendCloud");
-    int pos = 0;
-    addIntToArr (last-first+1, buff, &pos); //send N of docs (should be sending the enc docs actually)
-    addIntToArr ((int)encImgIndex.size(), buff, &pos);
-    addIntToArr ((int)encTextIndex.size(), buff, &pos);
-    addIntToArr (CashCrypt::Ksize, buff, &pos);
-    for (map<vector<unsigned char>,vector<unsigned char> >::iterator it=encImgIndex.begin(); it!=encImgIndex.end(); ++it) {
-        addIntToArr ((int)it->second.size(), buff, &pos);
-        for (int i = 0; i < it->first.size(); i++) {
-            unsigned char x = it->first[i];
-            addToArr(&x, sizeof(unsigned char), buff, &pos);
-        }
-        for (int i = 0; i < it->second.size(); i++)
-            addToArr(&(it->second[i]), sizeof(unsigned char), buff, &pos);
-    }
-    for (map<vector<unsigned char>,vector<unsigned char> >::iterator it=encTextIndex.begin(); it!=encTextIndex.end(); ++it) {
-        addIntToArr ((int)it->second.size(), buff, &pos);
-        for (int i = 0; i < it->first.size(); i++) {
-            unsigned char x = it->first[i];
-            addToArr(&x, sizeof(unsigned char), buff, &pos);
-        }
-        for (int i = 0; i < it->second.size(); i++)
-            addToArr(&(it->second[i]), sizeof(unsigned char), buff, &pos);
-    }
-    char buffer[1];
-    buffer[0] = 'a';
-    sockfd = connectAndSend(buffer, 1);
-    socketSend(sockfd, buff, buffSize);
-    free(buff);
-    cloudTime += diffSec(start, getTime());                 //end benchmark
-
-    //    socketReceiveAck(sockfd);
-    close(sockfd);
-}*/
-
-void CashClient::addDocs(const char* imgDataset, const char* textDataset, int first, int last, int prefix) {
+void CashClient::addDocs(const char* imgDataset, const char* textDataset, int first, int last) {
     timespec start;
     map<int,string> tags;
     map<int,string> imgs;
@@ -211,7 +107,7 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
     map<int,string>::iterator imgs_it=imgs.begin();
     map<int,string>::iterator tags_it=tags.begin();
     while (imgs_it != imgs.end() && tags_it != tags.end()) {
-        printf("add %s\n", imgs_it->second.c_str());
+        //printf("add %s\n", imgs_it->second.c_str());
 
         //extract img features
         start = getTime();                          //start feature extraction benchmark
@@ -223,6 +119,13 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
         start = getTime();                          //start index benchmark
 //        vector<vector<int> >* clusterIndexes;
         bowExtractor->compute( image, keypoints, bowDesc);//, clusterIndexes );
+
+        if(bowDesc.size().height == 0) {
+            printf("no desc continue\n");
+            ++imgs_it;
+            ++tags_it;
+            continue;
+        }
         indexTime += diffSec(start, getTime());     //end benchmark
 
         //extract text features
@@ -259,7 +162,7 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
             data.index = &encImgIndex;
             data.bowDesc = &bowDesc;
             data.nDescriptors = (int)keypoints.size();
-            data.docId = imgs_it->first/*id*/+prefix;
+            data.docId = imgs_it->first;
             encThreadsData[i] = data;
             if (pthread_create(&encThreads[i], NULL, encryptAndIndexImgsThread, (void*)&encThreadsData[i]))
                 pee("Error: unable to create sbeEncryptionThread");
@@ -280,7 +183,7 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
             map<string,int>::iterator counterIt = textDcount->find(it->first);
             if (counterIt != textDcount->end())
                 c = counterIt->second;
-            encryptAndIndex((void*)it->first.c_str(), (int)it->first.size(), c, imgs_it->first/*id*/+prefix, it->second, &encTextIndex);
+            encryptAndIndex((void*)it->first.c_str(), (int)it->first.size(), c, imgs_it->first, it->second, &encTextIndex);
             (*textDcount)[it->first] = ++c;
         }
         for (int i = 0; i < numCPU; i++)
@@ -290,6 +193,7 @@ void CashClient::addDocs(const char* imgDataset, const char* textDataset, int fi
         ++imgs_it;
         ++tags_it;
     }
+    printf("added %lu images\n", imgs.size());
 //    free(fname);
 
     //send to cloud
@@ -447,17 +351,14 @@ vector<QueryResult> CashClient::queryRO(map<int,int>* vws, map<string,int>* kws)
     }
     cryptoTime += diffSec(start, getTime());        //end benchmark
 //    start = getTime();                              //start cloud time benchmark
-    LOGI("Sending query...\n");
+    //LOGI("Sending query...\n");
     int sockfd = connectAndSend(buff, buffSize);
     //    const int x = (int)encKeywords.size()*TextCrypt::keysize+2*sizeof(int);
     //    LOGI("Text Search network traffic part 1: %d\n",x);
-    LOGI("Query sent, awaiting results...\n");
+    //LOGI("Query sent, awaiting results...\n");
     free(buff);
     vector<QueryResult> queryResults = this->receiveResults(sockfd);
 
-    for(QueryResult r : queryResults) {
-        printf("%d %f\n", r.docId, r.score);
-    }
 //    cloudTime += diffSec(start, getTime());            //end benchmark
     close(sockfd);
     return queryResults;

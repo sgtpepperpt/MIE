@@ -28,7 +28,7 @@ using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
-#define CLUSTERS 10000
+#define CLUSTERS 1000
 
 class CashClient {
 
@@ -46,7 +46,7 @@ protected:
     double featureTime, cryptoTime, cloudTime, indexTime, trainTime;
     //Ptr<FeatureDetector> detector;
     //Ptr<DescriptorExtractor> extractor;
-    Ptr<SURF> surf;
+    Ptr<SIFT> surf;
     BOWImgDescriptorExtractor* bowExtractor;
     EnglishAnalyzer* analyzer;
     static CashCrypt* crypto;
@@ -66,7 +66,7 @@ public:
     CashClient();
     ~CashClient();
     void train(const char* dataset, int first, int last);
-    void addDocs(const char* imgDataset, const char* textDataset, int first, int last, int prefix);
+    void addDocs(const char* imgDataset, const char* textDataset, int first, int last);
     vector<QueryResult> search(string imgPath, string textPath, bool randomOracle);
     string printTime();
     void cleanTime();
